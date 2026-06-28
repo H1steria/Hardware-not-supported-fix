@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>AntiCrashVolumetrics</AssemblyName>
-    <Description>Mod para desactivar niebla volumétrica y evitar crash por shaders antiguos</Description>
+    <AssemblyName>Hardware_not_supported_fix</AssemblyName>
+    <Description>Mod to fix "[Error  : Unity Log] Hardware not supported for Volumetric Materials"</Description>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
