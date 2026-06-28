@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>AntiCrashVolumetrics</AssemblyName>
+    <Description>Mod para desactivar niebla volumétrica y evitar crash por shaders antiguos</Description>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Referencias básicas -->
+    <Reference Include="0Harmony" HintPath="..\Libraries\0Harmony.dll" />
+    <Reference Include="Assembly-CSharp" HintPath="..\Libraries\Assembly-CSharp.dll" />
+    <Reference Include="BepInEx" HintPath="..\Libraries\BepInEx.dll" />
+    <Reference Include="UnityEngine" HintPath="..\Libraries\UnityEngine.dll" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="..\Libraries\UnityEngine.CoreModule.dll" />
+
+    <!-- ESTAS DOS SON LAS IMPORTANTES PARA EL RENDERIZADO -->
+    <Reference Include="Unity.RenderPipelines.Core.Runtime" HintPath="..\Libraries\Unity.RenderPipelines.Core.Runtime.dll" />
+    <Reference Include="Unity.RenderPipelines.HighDefinition.Runtime" HintPath="..\Libraries\Unity.RenderPipelines.HighDefinition.Runtime.dll" />
+
+    <Reference Include="Unity.Netcode.Runtime" HintPath="..\Libraries\Unity.Netcode.Runtime.dll" />
+
+  </ItemGroup>
+
+</Project>

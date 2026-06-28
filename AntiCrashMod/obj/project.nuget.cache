@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "NxmvVMtVEiI=",
+  "success": true,
+  "projectFilePath": "D:\\Escritorio\\mod_main\\AntiCrashMod\\mod.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\netstandard.library.ref\\2.1.0\\netstandard.library.ref.2.1.0.nupkg.sha512"
+  ],
+  "logs": []
+}
