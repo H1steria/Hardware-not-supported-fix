@@ -25,29 +25,7 @@ namespace AntiCrashVolumetrics
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  PARCHE 1 — PlayerControllerB.Start
-    // ════════════════════════════════════════════════════════════════
-    [HarmonyPatch(typeof(PlayerControllerB), "Start")]
-    public class PlayerControllerPatch
-    {
-        [HarmonyPostfix]
-        static void PostfixStart()
-        {
-            GraphicsReducer.ApplyAll();
-            // Usamos la instancia del plugin para iniciar la corrutina de forma segura
-            Plugin.Instance.StartCoroutine(DelayedApply());
-        }
-
-        static IEnumerator DelayedApply()
-        {
-            yield return new WaitForEndOfFrame();
-            yield return new WaitForSeconds(1f);
-            GraphicsReducer.ApplyAll();
-        }
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    //  PARCHE 2 — Interceptar cada cámara HDRP al crearse
+    //  Interceptar cada cámara HDRP al crearse
     // ════════════════════════════════════════════════════════════════
     [HarmonyPatch(typeof(HDAdditionalCameraData), "Awake")]
     public class HDCameraAwakePatch
@@ -58,22 +36,6 @@ namespace AntiCrashVolumetrics
             var cam = __instance.GetComponent<Camera>();
             if (cam != null)
                 GraphicsReducer.ApplyCameraOverrides(cam);
-        }
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    //  PARCHE 3 — Primer frame real del pipeline
-    // ════════════════════════════════════════════════════════════════
-    [HarmonyPatch(typeof(HDRenderPipeline), "Render")]
-    public class HDRenderPipelinePatch
-    {
-        static bool firstCall = true;
-        [HarmonyPrefix]
-        static void PrefixRender()
-        {
-            if (!firstCall) return;
-            firstCall = false;
-            GraphicsReducer.ApplyAll();
         }
     }
 
@@ -181,9 +143,9 @@ namespace AntiCrashVolumetrics
                     // ── Resolución dinámica al 50% ──
                     s.dynamicResolutionSettings.enabled          = true;
                     s.dynamicResolutionSettings.forceResolution  = true;
-                    s.dynamicResolutionSettings.forcedPercentage = 50f;
-                    s.dynamicResolutionSettings.minPercentage    = 50f;
-                    s.dynamicResolutionSettings.maxPercentage    = 50f;
+                    // s.dynamicResolutionSettings.forcedPercentage = 50f;
+                    // s.dynamicResolutionSettings.minPercentage    = 50f;
+                    // s.dynamicResolutionSettings.maxPercentage    = 50f;
 
                     asset.currentPlatformRenderPipelineSettings = s;
                     Debug.Log("[AntiCrash] HDRenderPipelineAsset configurado correctamente.");
@@ -198,22 +160,6 @@ namespace AntiCrashVolumetrics
         // ─────────────────────────────────────────────────────────
         //  Aplicación completa sobre la escena activa
         // ─────────────────────────────────────────────────────────
-        public static void ApplyAll()
-        {
-            DisablePerCameraSettings();
-            DisableVolumetricLights();
-            DisableVolumeProfiles();
-            DisableLocalFogs();
-            DisableReflectionProbes();
-        }
-
-        // ── 1. FrameSettings por cámara ──────────────────────────
-        static void DisablePerCameraSettings()
-        {
-            foreach (var cam in UnityEngine.Object.FindObjectsOfType<Camera>(true))
-                ApplyCameraOverrides(cam);
-        }
-
         public static void ApplyCameraOverrides(Camera cam)
         {
             if (cam == null) return;
@@ -245,86 +191,6 @@ namespace AntiCrashVolumetrics
             {
                 Debug.LogWarning($"[AntiCrash] Cámara '{cam.name}': {ex.Message}");
             }
-        }
-
-        // ── 2. Luces — sombras y volumétricos a cero ─────────────
-        //  Aquí sí podemos deshabilitar sombras de forma segura,
-        //  actuando sobre cada luz en vez de sobre el manager global.
-        static void DisableVolumetricLights()
-        {
-            foreach (var light in UnityEngine.Object.FindObjectsOfType<HDAdditionalLightData>(true))
-            {
-                if (light == null) continue;
-                try
-                {
-                    light.volumetricDimmer       = 0f;
-                    light.volumetricShadowDimmer = 0f;
-                    light.EnableShadows(false);         // seguro: actúa por luz
-                }
-                catch { }
-            }
-        }
-
-        // ── 3. Perfiles de Volume ─────────────────────────────────
-        static void DisableVolumeProfiles()
-        {
-            foreach (var vol in UnityEngine.Object.FindObjectsOfType<Volume>(true))
-            {
-                if (vol == null) continue;
-                VolumeProfile profile = vol.sharedProfile ?? vol.profile;
-                if (profile == null) continue;
-                try
-                {
-                    if (profile.TryGet<Fog>(out var fog))
-                    {
-                        fog.active = false;
-                        fog.enabled.Override(false);
-                        fog.enableVolumetricFog.Override(false);
-                    }
-                    if (profile.TryGet<VolumetricClouds>(out var clouds))
-                    {
-                        clouds.active = false;
-                        clouds.enable.Override(false);
-                    }
-                    if (profile.TryGet<ScreenSpaceReflection>(out var ssr))
-                        ssr.active = false;
-                    if (profile.TryGet<ScreenSpaceAmbientOcclusion>(out var ssao))
-                        ssao.active = false;
-                    if (profile.TryGet<MotionBlur>(out var mb))
-                        mb.active = false;
-                    if (profile.TryGet<Bloom>(out var bloom))
-                        bloom.active = false;
-                    if (profile.TryGet<DepthOfField>(out var dof))
-                        dof.active = false;
-                    if (profile.TryGet<ChromaticAberration>(out var ca))
-                        ca.active = false;
-                    if (profile.TryGet<GlobalIllumination>(out var gi))
-                        gi.active = false;
-                    if (profile.TryGet<ContactShadows>(out var cs))
-                        cs.active = false;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[AntiCrash] Volume '{vol.name}': {ex.Message}");
-                }
-            }
-        }
-
-        // ── 4. Niebla local ───────────────────────────────────────
-        static void DisableLocalFogs()
-        {
-            foreach (var lf in UnityEngine.Object.FindObjectsOfType<LocalVolumetricFog>(true))
-                if (lf != null) lf.enabled = false;
-        }
-
-        // ── 5. Reflection Probes ──────────────────────────────────
-        static void DisableReflectionProbes()
-        {
-            foreach (var rp in UnityEngine.Object.FindObjectsOfType<ReflectionProbe>(true))
-                if (rp != null) rp.enabled = false;
-
-            foreach (var hdRp in UnityEngine.Object.FindObjectsOfType<HDAdditionalReflectionData>(true))
-                if (hdRp != null) hdRp.enabled = false;
         }
     }
 }
